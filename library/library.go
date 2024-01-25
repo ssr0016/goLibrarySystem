@@ -1,10 +1,16 @@
 package library
 
-// import "context"
+import (
+	"context"
+)
 
-// type Service interface {
-// 	Create(ctx context.Context, cmd *CreateBookCommand) error
-// 	Search(ctx context.Context, query *SearchBookQuery) (*SearchBookResult, error)
-// 	Get(ctx context.Context, id int64) (*BookDTO, error)
-// 	Update(ctx context.Context, cmd *UpdateBookCommand) error
-// }
+// Create Repository
+// Storage of the entity/model bean in system
+
+type BookRepository interface {
+	Save(ctx context.Context, book Book)
+	Update(ctx context.Context, book Book)
+	Delete(ctx context.Context, bookId int)
+	FindById(ctx context.Context, bookId int) (Book, error)
+	FindAll(ctx context.Context) []Book
+}
