@@ -4,18 +4,36 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/julienschmidt/httprouter"
+	"github.com/ssr0016/library/config"
 	"github.com/ssr0016/library/helper"
+	libraryimpl "github.com/ssr0016/library/library/libraryImpl"
+	"github.com/ssr0016/library/protocol/rest"
+	"github.com/ssr0016/library/router"
 )
 
 func main() {
 	fmt.Printf("Start server!")
 
-	routes := httprouter.New()
+	//database
+	db := config.DbConnectin()
 
-	routes.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		fmt.Fprintf(w, "Hello, World!")
-	})
+	// repository
+	bookRepository := libraryimpl.NewBookRepositoryImpl(db)
+
+	// service
+	bookService := libraryimpl.NewBookServiceImpl(bookRepository)
+
+	// controller
+	bookController := rest.NewBookController(bookService)
+
+	// router
+	routes := router.NewRouter(bookController)
+
+	// routes := httprouter.New()
+
+	// routes.GET("/", func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	// 	fmt.Fprintf(w, "Hello, World!")
+	// })
 
 	server := http.Server{
 		Addr:    "localhost:8080",

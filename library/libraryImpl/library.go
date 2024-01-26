@@ -2,97 +2,67 @@ package libraryimpl
 
 import (
 	"context"
-	"database/sql"
 
+	"github.com/ssr0016/library/data/request"
+	"github.com/ssr0016/library/data/response"
 	"github.com/ssr0016/library/helper"
 	"github.com/ssr0016/library/library"
 )
 
-type BookRepositoryImpl struct {
-	Db *sql.DB
+type BookServiceImpl struct {
+	BookRepository library.BookRepository
 }
 
-func NewBookRepositoryImpl(Db *sql.DB) library.BookRepository {
-	return &BookRepositoryImpl{
-		Db: Db,
+func NewBookServiceImpl(bookRepository library.BookRepository) library.BookService {
+	return &BookServiceImpl{
+		BookRepository: bookRepository,
 	}
 }
 
-func (b *BookRepositoryImpl) Save(ctx context.Context, book library.Book) {
-	panic("unimplemented")
-}
-func (b *BookRepositoryImpl) Update(ctx context.Context, book library.Book) {
-	panic("unimplemented")
-}
-func (b *BookRepositoryImpl) Delete(ctx context.Context, bookId int) {
-	tx, err := b.Db.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
-
-	SQL := `
-		DELETE
-		FROM
-		book
-		WHERE
-		id = $1
-	`
-	_, errExec := tx.ExecContext(ctx, SQL, bookId)
-	helper.PanicIfError(errExec)
-}
-func (b *BookRepositoryImpl) FindById(ctx context.Context, bookId int) (library.Book, error) {
-	tx, err := b.Db.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
-
-	SQL := `
-		SELECT 
-		id, name
-		FROM
-		book
-		WHERE
-		id = $1
-	`
-
-	result, errQuery := tx.QueryContext(ctx, SQL, bookId)
-	helper.PanicIfError(errQuery)
-	defer result.Close()
-
-	book := library.Book{}
-
-	if result.Next() {
-		err := result.Scan(&book.Id, &book.Name)
-		helper.PanicIfError(err)
-		return book, nil
-	} else {
-		return book, library.ErrBookIdNotFound
+func (b *BookServiceImpl) Create(ctx context.Context, request request.BookCreateRequest) {
+	book := library.Book{
+		Name: request.Name,
 	}
 
+	b.BookRepository.Save(ctx, book)
 }
-func (b *BookRepositoryImpl) FindAll(ctx context.Context) []library.Book {
-	tx, err := b.Db.Begin()
+
+func (b *BookServiceImpl) Delete(ctx context.Context, bookId int) {
+	book, err := b.BookRepository.FindById(ctx, bookId)
 	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
+	b.BookRepository.Delete(ctx, book.Id)
+}
 
-	SQL := `
-		SELECT
-		id, name
-		FROM
-		book
-	`
-	result, errQuery := tx.QueryContext(ctx, SQL)
-	helper.PanicIfError(errQuery)
-	defer result.Close()
+func (b *BookServiceImpl) FindAll(ctx context.Context) []response.BookResponse {
+	books := b.BookRepository.FindAll(ctx)
 
-	var books []library.Book
+	var bookResp []response.BookResponse
 
-	for result.Next() {
-		book := library.Book{}
-		err := result.Scan(&book.Id, &book.Name)
-		helper.PanicIfError(err)
+	for _, value := range books {
+		book := response.BookResponse{
+			Id:   value.Id,
+			Name: value.Name,
+		}
 
-		books = append(books, book)
+		bookResp = append(bookResp, book)
 	}
 
-	return books
+	return bookResp
+}
 
+func (b *BookServiceImpl) FindById(ctx context.Context, bookId int) response.BookResponse {
+	book, err := b.BookRepository.FindById(ctx, bookId)
+	helper.PanicIfError(err)
+	return response.BookResponse{
+		Id:   book.Id,
+		Name: book.Name,
+	}
+}
+
+func (b *BookServiceImpl) Update(ctx context.Context, request request.BookUpdateRequest) {
+	book, err := b.BookRepository.FindById(ctx, request.Id)
+	helper.PanicIfError(err)
+
+	book.Name = request.Name
+	b.BookRepository.Update(ctx, book)
 }
