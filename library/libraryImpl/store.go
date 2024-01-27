@@ -93,8 +93,8 @@ func (b *BookRepositoryImpl) FindById(ctx context.Context, bookId int) (library.
 
 		return book, library.ErrBookIdNotFound
 	}
-
 }
+
 func (b *BookRepositoryImpl) FindAll(ctx context.Context) []library.Book {
 	tx, err := b.Db.Begin()
 	helper.PanicIfError(err)
