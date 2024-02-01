@@ -8,118 +8,162 @@ import (
 	"github.com/ssr0016/library/library"
 )
 
-type BookRepositoryImpl struct {
+type store struct {
 	Db *sql.DB
 }
 
-func NewBookRepositoryImpl(Db *sql.DB) library.BookRepository {
-	return &BookRepositoryImpl{
+func NewStore(Db *sql.DB) *store {
+	return &store{
 		Db: Db,
 	}
 }
 
-func (b *BookRepositoryImpl) Save(ctx context.Context, book library.Book) {
-	tx, err := b.Db.Begin()
+func (s *store) Create(ctx context.Context, entity *library.CreateBookCommand) error {
+	tx, err := s.Db.Begin()
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollBack(tx)
 
-	SQL := `
-		INSERT INTO
-		book
-		(name)
-		VALUES
-		($1)
-	`
-	_, err = tx.ExecContext(ctx, SQL, book.Name)
+	rawSQL := `
+		INSERT INTO book(
+			title,
+			author_id,
+			category_id
+			published_at
+		)
+		VALUES(
+			:title,
+			:author_id,
+			:category_id,
+			:published_at
+		)
+		`
+	_, err = tx.ExecContext(ctx, rawSQL, entity)
 	helper.PanicIfError(err)
-}
-func (b *BookRepositoryImpl) Update(ctx context.Context, book library.Book) {
-	tx, err := b.Db.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
-
-	SQL := `
-		UPDATE
-		book
-		SET
-		name = $1
-		WHERE
-		id = $2
-	`
-	_, err = tx.ExecContext(ctx, SQL, book.Name, book.Id)
-	helper.PanicIfError(err)
-}
-func (b *BookRepositoryImpl) Delete(ctx context.Context, bookId int) {
-	tx, err := b.Db.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
-
-	SQL := `
-		DELETE
-		FROM
-		book
-		WHERE
-		id = $1
-	`
-	_, errExec := tx.ExecContext(ctx, SQL, bookId)
-	helper.PanicIfError(errExec)
+	return nil
 
 }
-func (b *BookRepositoryImpl) FindById(ctx context.Context, bookId int) (library.Book, error) {
-	tx, err := b.Db.Begin()
+
+func (s *store) Search(ctx context.Context, query *library.SearchBookQuery) (*library.SearchBookResult, error) {
+	tx, err := s.Db.Begin()
 	helper.PanicIfError(err)
 	defer helper.CommitOrRollBack(tx)
 
-	SQL := `
-		SELECT 
-		id, name
-		FROM
-		book
-		WHERE
-		id = $1
-	`
-
-	result, errQuery := tx.QueryContext(ctx, SQL, bookId)
-	helper.PanicIfError(errQuery)
-	defer result.Close()
-
-	book := library.Book{}
-
-	if result.Next() {
-		err := result.Scan(&book.Id, &book.Name)
-		helper.PanicIfError(err)
-		return book, nil
-	} else {
-
-		return book, library.ErrBookIdNotFound
-	}
-}
-
-func (b *BookRepositoryImpl) FindAll(ctx context.Context) []library.Book {
-	tx, err := b.Db.Begin()
-	helper.PanicIfError(err)
-	defer helper.CommitOrRollBack(tx)
-
-	SQL := `
+	rawSQL := `
 		SELECT
-		id, name
-		FROM
-		book
+			id,
+			title,
+			author,
+			category_id,
+			published_at
+		FROM book
 	`
-	result, errQuery := tx.QueryContext(ctx, SQL)
+	result, errQuery := tx.QueryContext(ctx, rawSQL)
 	helper.PanicIfError(errQuery)
 	defer result.Close()
 
-	var books []library.Book
+	var books []library.SearchBookQuery
 
 	for result.Next() {
-		book := library.Book{}
-		err := result.Scan(&book.Id, &book.Name)
+		book := library.SearchBookQuery{}
+		err := result.Scan(query)
 		helper.PanicIfError(err)
 
 		books = append(books, book)
 	}
 
-	return books
+	searchResult := &library.SearchBookResult{
+		TotalCount: int64(len(books)),
+		Page:       query.Page,
+		PerPage:    query.PerPage,
+	}
 
+	return searchResult, nil
+}
+
+func (s *store) GetById(ctx context.Context, bookId int64) (*library.BookDTO, error) {
+	tx, err := s.Db.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollBack(tx)
+
+	rawSQL := `
+		SELECT 
+			id,
+			title,
+			author_id,
+			category_id,
+			published_at
+		FROM book
+		WHERE id = ?
+	`
+
+	result, errQuery := tx.QueryContext(ctx, rawSQL, bookId)
+	helper.PanicIfError(errQuery)
+	defer result.Close()
+
+	book := library.BookDTO{}
+
+	if result.Next() {
+		err := result.Scan(&book)
+		helper.PanicIfError(err)
+		return &book, nil
+	} else {
+
+		return nil, library.ErrBookNotFound
+	}
+}
+
+func (s *store) Update(ctx context.Context, cmd *library.UpdateBookCommand) error {
+	tx, err := s.Db.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollBack(tx)
+
+	rawSQL := `
+		UPDATE book
+		SET title = :title,
+		author_id = :author_id,
+		category_id = :category_id,
+		published_at = :published_at
+		WHERE id = :id
+	`
+	_, err = tx.ExecContext(ctx, rawSQL, cmd)
+	helper.PanicIfError(err)
+
+	return nil
+}
+
+func (s *store) bookTaken(ctx context.Context, id int64, title string) ([]*library.Book, error) {
+	tx, err := s.Db.Begin()
+	helper.PanicIfError(err)
+	defer helper.CommitOrRollBack(tx)
+
+	rawSQL := `
+		SELECT
+			id,
+			title,
+			author_id,
+			category_id,
+			published_at
+		FROM book
+		WHERE 
+			id = ? OR
+			title = ?
+	`
+
+	rows, errQuery := tx.QueryContext(ctx, rawSQL, id, title)
+	helper.PanicIfError(errQuery)
+	defer rows.Close()
+
+	var result []*library.Book
+
+	for rows.Next() {
+		book := library.Book{}
+		err := rows.Scan(&book)
+		helper.PanicIfError(err)
+		result = append(result, &book)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }

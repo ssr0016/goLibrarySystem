@@ -18,16 +18,15 @@ func main() {
 	db := config.DbConnectin()
 
 	// repository
-	bookRepository := libraryimpl.NewBookRepositoryImpl(db)
+	bookStore := libraryimpl.NewStore(db)
 
 	// service
-	bookService := libraryimpl.NewBookServiceImpl(bookRepository)
+	bookService := libraryimpl.NewService(bookStore)
 
 	// controller
-	bookController := rest.NewBookController(bookService)
-
+	bookHandler := rest.NewServer(bookService)
 	// router
-	routes := router.NewRouter(bookController)
+	routes := router.NewRouter(bookHandler)
 
 	// routes := httprouter.New()
 

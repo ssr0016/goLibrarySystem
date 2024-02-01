@@ -8,7 +8,7 @@ import (
 	"github.com/ssr0016/library/protocol/rest"
 )
 
-func NewRouter(bookController *rest.BookController) *httprouter.Router {
+func NewRouter(bookHandler *rest.Server) *httprouter.Router {
 
 	router := httprouter.New()
 
@@ -16,11 +16,11 @@ func NewRouter(bookController *rest.BookController) *httprouter.Router {
 		fmt.Fprintf(w, "Welcome Home!")
 	})
 
-	router.GET("/api/book", bookController.FindAll)
-	router.GET("/api/book/:bookId", bookController.FindById)
-	router.POST("/api/book", bookController.Create)
-	router.PATCH("/api/book/:bookId", bookController.Update)
-	router.DELETE("/api/book/:bookId", bookController.Delete)
+	router.GET("/api/book", bookHandler.Search)
+	router.GET("/api/book/:bookId", bookHandler.GetById)
+	router.POST("/api/book", bookHandler.Create)
+	router.PATCH("/api/book/:bookId", bookHandler.Update)
+	// router.DELETE("/api/book/:bookId", bookController.Delete)
 
 	return router
 }

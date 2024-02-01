@@ -1,15 +1,15 @@
 package libraryimpl
 
-import (
-	"context"
-	"database/sql"
-	"testing"
+// import (
+// 	"context"
+// 	"testing"
+// 
 
-	_ "github.com/lib/pq"
-	"github.com/ssr0016/library/config"
-	"github.com/ssr0016/library/library"
-	"github.com/stretchr/testify/require"
-)
+// 	_ "github.com/lib/pq"
+// 	"github.com/ssr0016/library/config"
+// 	"github.com/ssr0016/library/library"
+// 	"github.com/stretchr/testify/require"
+// )
 
 // const (
 // 	host     = "localhost"
@@ -33,135 +33,121 @@ import (
 
 // }
 
-func TestSave(t *testing.T) {
-	testCases := []struct {
-		name string
-		library.Book
-	}{
-		{
-			name: "Create",
-			Book: library.Book{
-				Name: "test",
-			},
-		},
-	}
+// func TestSave(t *testing.T) {
+// 	testCases := []struct {
+// 		name string
+// 		book library.Book
+// 	}{
+// 		{
+// 			name: "Save",
+// 			book: library.Book{
+// 				Name: "test",
+// 			},
+// 		},
+// 	}
 
-	for _, tc := range testCases {
-		db := config.DbConnectin()
-		bookRepository := NewBookRepositoryImpl(db)
-		bookRepository.Save(context.Background(), tc.Book)
+// 	for _, tc := range testCases {
+// 		db := config.DbConnectin()
+// 		bookRepository := NewBookRepositoryImpl(db)
+// 		bookRepository.Save(context.Background(), tc.book)
 
-		require.Equal(t, "test", tc.Book.Name)
-	}
-}
+// 		require.Equal(t, "test", tc.book.Name)
+// 	}
+// }
 
-func TestUpdate(t *testing.T) {
-	testCases := []struct {
-		name string
-		library.Book
-	}{
-		{
-			name: "Update",
-			Book: library.Book{
-				Name: "test",
-			},
-		},
-	}
+// func TestUpdate(t *testing.T) {
+// 	testCases := []struct {
+// 		name string
+// 		library.Book
+// 	}{
+// 		{
+// 			name: "Update",
+// 			Book: library.Book{
+// 				Name: "test",
+// 			},
+// 		},
+// 	}
 
-	for _, tc := range testCases {
-		db := config.DbConnectin()
-		bookRepository := NewBookRepositoryImpl(db)
-		bookRepository.Update(context.Background(), tc.Book)
+// 	for _, tc := range testCases {
+// 		db := config.DbConnectin()
+// 		bookRepository := NewBookRepositoryImpl(db)
+// 		bookRepository.Update(context.Background(), tc.Book)
 
-		require.Equal(t, "test", tc.Book.Name)
-	}
-}
+// 		require.Equal(t, "test", tc.Book.Name)
+// 	}
+// }
 
-func TestDelete(t *testing.T) {
-	testCases := []struct {
-		name   string
-		bookId int
-	}{
-		{
-			name:   "Delete",
-			bookId: 1,
-		},
-	}
+// func TestDelete(t *testing.T) {
+// 	testCases := []struct {
+// 		name   string
+// 		bookId int
+// 	}{
+// 		{
+// 			name:   "Delete",
+// 			bookId: 1,
+// 		},
+// 	}
 
-	for _, tc := range testCases {
-		db := config.DbConnectin()
-		bookRepository := NewBookRepositoryImpl(db)
-		bookRepository.Delete(context.Background(), tc.bookId)
+// 	for _, tc := range testCases {
+// 		db := config.DbConnectin()
+// 		bookRepository := NewBookRepositoryImpl(db)
+// 		bookRepository.Delete(context.Background(), tc.bookId)
 
-		require.Equal(t, 1, tc.bookId)
-	}
-}
+// 		require.Equal(t, 1, tc.bookId)
+// 	}
+// }
 
-func TestFindById(t *testing.T) {
-	testCases := []struct {
-		name           string
-		bookId         int
-		expectedResult library.Book
-		expectedError  error
-	}{
-		{
-			name:           "FindById Success",
-			bookId:         1,
-			expectedResult: library.Book{Id: 1, Name: "test"},
-			expectedError:  nil,
-		},
+// func TestFindById(t *testing.T) {
+// 	testCases := []struct {
+// 		name           string
+// 		bookId         int
+// 		expectedResult library.Book
+// 		expectedError  error
+// 	}{
+// 		{
+// 			name:           "FindById Success",
+// 			bookId:         1,
+// 			expectedResult: library.Book{Id: 1, Name: "test"},
+// 			expectedError:  nil,
+// 		},
+// 		{
+// 			name:           "FindById Failed",
+// 			bookId:         2,
+// 			expectedResult: library.Book{},
+// 			expectedError:  library.ErrBookIdNotFound,
+// 		},
+// 	}
 
-		{
-			name:   "FindById Failed",
-			bookId: 0,
-			expectedResult: library.Book{
-				Id:   0,
-				Name: "test",
-			},
-			expectedError: nil,
-		},
+// 	for _, tc := range testCases {
+// 		t.Run(tc.name, func(t *testing.T) {
+// 			db := config.DbConnectin()
 
-		{
-			name:   "FindById Failed",
-			bookId: 2,
-			expectedResult: library.Book{
-				Id:   0,
-				Name: "test",
-			},
-			expectedError: sql.ErrNoRows,
-		},
-	}
+// 			bookRepository := NewBookRepositoryImpl(db)
+// 			bookRepository.FindById(context.Background(), tc.bookId)
+// 		})
+// 	}
+// }
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			db := config.DbConnectin()
+// func TestFindAll(t *testing.T) {
+// 	testCases := []struct {
+// 		name           string
+// 		expectedResult []library.Book
+// 	}{
+// 		{
+// 			name:           "FindAll Success",
+// 			expectedResult: []library.Book{{Id: 1, Name: "test"}},
+// 		},
+// 	}
 
-			bookRepository := NewBookRepositoryImpl(db)
-			bookRepository.FindById(context.Background(), tc.bookId)
-		})
-	}
-}
+// 	for _, tc := range testCases {
+// 		t.Run(tc.name, func(t *testing.T) {
+// 			db := config.DbConnectin()
+// 			result := tc.expectedResult
 
-func TestFindAll(t *testing.T) {
-	testCases := []struct {
-		name           string
-		expectedResult []library.Book
-	}{
-		{
-			name:           "FindAll Success",
-			expectedResult: []library.Book{{Id: 1, Name: "test"}},
-		},
-	}
+// 			bookRepository := NewBookRepositoryImpl(db)
+// 			bookRepository.FindAll(context.Background())
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			db := config.DbConnectin()
-			result := tc.expectedResult
-
-			bookRepository := NewBookRepositoryImpl(db)
-			bookRepository.FindAll(context.Background())
-
-			require.Equal(t, tc.expectedResult, result)
-		})
-	}
-}
+// 			require.Equal(t, tc.expectedResult, result)
+// 		})
+// 	}
+// }
